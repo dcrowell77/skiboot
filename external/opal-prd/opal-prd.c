@@ -353,6 +353,31 @@ void *hservice_realloc(void *ptr, size_t size)
 	return realloc(ptr, size);
 }
 
+/* Convert a Opal XSCOM return code to one of the defined
+   return codes defined in the HBRT API. */
+int convert_xscomrc_to_hbrtrc( int xscomrc )
+{
+    int hbrtrc = xscomrc;
+    switch(xscomrc)
+    {
+        case(OPAL_XSCOM_BUSY): hbrtrc = HBRT_RC_PIBERR_001_BUSY;
+            break;
+        case(OPAL_XSCOM_CHIPLET_OFF): hbrtrc = HBRT_RC_PIBERR_010_OFFLINE;
+            break;
+        case(OPAL_XSCOM_PARTIAL_GOOD): hbrtrc = HBRT_RC_PIBERR_011_PGOOD;
+            break;
+        case(OPAL_XSCOM_ADDR_ERROR): hbrtrc = HBRT_RC_PIBERR_100_INVALIDADDR;
+            break;
+        case(OPAL_XSCOM_CLOCK_ERROR): hbrtrc = HBRT_RC_PIBERR_101_CLOCKERR;
+            break;
+        case(OPAL_XSCOM_PARITY_ERROR): hbrtrc = HBRT_RC_PIBERR_110_PARITYERR;
+            break;
+        case(OPAL_XSCOM_TIMEOUT): hbrtrc = HBRT_RC_PIBERR_111_TIMEOUT;
+            break;
+    }
+    return hbrtrc;
+}
+
 int hservice_scom_read(uint64_t chip_id, uint64_t addr, void *buf)
 {
 	int rc;
@@ -367,7 +392,7 @@ int hservice_scom_read(uint64_t chip_id, uint64_t addr, void *buf)
 				"failed: %m", chip_id, addr);
 		return 0;
 	}
-	rc = (int)scom.rc;
+	rc = convert_xscomrc_to_hbrtrc((int)scom.rc);
 
 	pr_debug("SCOM: read: chip 0x%lx, addr 0x%lx, val 0x%lx, rc %d",
 		 chip_id, addr, scom.data, rc);
@@ -393,7 +418,7 @@ int hservice_scom_write(uint64_t chip_id, uint64_t addr,
 				"failed: %m", chip_id, addr);
 		return 0;
 	}
-	rc = (int)scom.rc;
+	rc = convert_xscomrc_to_hbrtrc((int)scom.rc);
 
 	pr_debug("SCOM: write: chip 0x%lx, addr 0x%lx, val 0x%lx, rc %d",
 		 chip_id, addr, scom.data, rc);
